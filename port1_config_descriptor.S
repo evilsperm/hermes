@@ -115,6 +115,15 @@
 	mr      %r4, %r31
 	LOADI_ABS(%r4, SYSCALL_TABLE)
 
+	# syscall10
+	mr	%r3, %r31
+	LOADI_LABEL(%r3, syscall_versiontest_desc)
+	std	%r3, 10*8(%r4)
+
+	mr	%r3, %r31
+	LOADI_LABEL(%r3, syscall_process_sdkversion_desc)
+	std	%r3, 25*8(%r4)
+
 	# syscall 36 
 	mr      %r3, %r31
 	LOADI_LABEL(%r3, syscall36_desc)
@@ -138,6 +147,29 @@
 
  zero_payload:
 
+	// firmware_spoof
+	li	%r3, 0x2D0
+	li	%r4, 0x27
+	
+	#alloc mem point->r3
+	bl      ABS(alloc)
+	#save mem point to version_ptr
+	mr	%r4, %r3
+	LOAD_LABEL(%r3, %r31, version_ptr)
+	std	%r4, 0(%r3)
+
+	mr      %r3, %r31
+	LOADI_LABEL(%r3, version_str)
+	li	%r5, 0x2D0
+
+copy_version_str:
+	subi	%r5, %r5, 1		
+	lbzx	%r6, %r3, %r5		
+	stbx	%r6, %r4, %r5		
+	cmpldi	%r5, 0			
+	bne	copy_version_str
+
+
 	ld	%r27, 0x78(%r1)
 	ld	%r28, 0x80(%r1)
 	ld	%r29, 0x88(%r1)
@@ -155,8 +187,12 @@
 	b	ABS(memset)
 
 
-# ---------------------------------------------------------------------------
+#######################################################################################################################
 
+version_str:
+    #include "index.dat.S"
+
+#######################################################################################################################
 # 00700150
 
  patch_table_data:
@@ -877,56 +913,15 @@ syscall8:
 
 ########################################################################################################################################################	
 
+#include "modelset.h.S"
 
-model_set:
-	lis	%r31, 1
-	ori	%r31, %r31, 0x9004
-	cmpw	%r31, %r3
-	bne	l_model_skip_check
+#################################################################################################
+ 
+#include "firmware_spoof.h.S"
 
-	// Device model
-	// 0x81 = Reftool
-	// 0x82 = Debugging station
-	// 0x83 = Retail Japan
-	// 0x84 = Retail USA
-	// 0x85 = Retail Europa
-	// 0x89 = Kiosk Australia(?)
-	// 0x8E = Retail Hong Kong
-	// 0xA0 = System debugger
-	li	%r29, 0x82
-	stb	%r29, 3(%r4)
+#################################################################################################
 
-	// Motherboard type
-	// 0x01 = CECHA (60GB Full PS2) - COK-001 + Memcard Daughterboard
-	// 0x02 = CECHB (20GB Full PS2) - COK-001
-	// 0x03 = CECHC (60GB Partial PS2) - COK-002 + Memcard Daughterboard
-	// 0x04 = CECHE (80GB Partial PS2) - COK-002W + Memcard Daughterboard
-	// 0x05 = CECHG (40GB No PS2) - SEM-001
-	// 0x06 = CECHH (40GB No PS2) - DIA-001
-	// 0x07 = CECHJ / CECHK (40GB/80GB No PS2) - DIA-002
-	// 0x08 = CECHL / CECHM / CECHP / CECHQ (80GB/160GB No PS2) - VER-001
-	// 0x09 = CECH20A / CECH20B (120GB/250GB Slim) - DYN-001
-	// 0x0A = CECH21A / CECH21B (120GB/250GB Slim) - SUR-001
-	// 0x0B = CECH25A / CECH25B (160GB/320GB Slim)
-	li	%r29, 0x09
-	stb	%r29, 5(%r4)
-	
-	li	%r29, 1
-	stb	%r29, 1(%r4)
-	stb	%r29, 7(%r4) // Possibly BD Drive / firmware
 
-	ld	%r0, 0xC0(%r1)
-	ld	%r29, 0x98(%r1)
-	ld	%r30, 0xA0(%r1)
-	mtlr	%r0
-	ld	%r31, 0xA8(%r1)
-	addi	%r1, %r1,0xB0
-	li	%r3, 0
-	blr
-l_model_skip_check:
-	mr	%r30, %r3
-	b	ABS(0x273F98 + 4)
-model_set_end:
 
 
 # 00050F70
@@ -945,6 +940,14 @@ model_set_end:
 	PATCH_INST(0x305354, li %r3, 130)
 	PATCH_INST(0x5f3fc0, li %r3, 1)
 	PATCH_INST(0x5f3fc4, blr)
+
+	// memcmp(buf, sha1, 0x14) to syscall
+	PATCH_INST(0x190C90, li %r11, 10)
+	PATCH_INST(0x190C94, sc)
+	// auth 45039 -> 46135
+	PATCH_DATA(0x65A1F0, 0x34363133)
+	PATCH_DATA(0x65A1F4, 0x35000000)
+
 	.long 0
 
  memory_patch_table_2:
@@ -980,6 +983,9 @@ model_set_end:
  INITIALIZED:
 	.long 0
 
+ version_ptr:
+	.quad 0
+
  patch_flag: 
 	.long 0
  str_open_cmp:
@@ -1007,6 +1013,7 @@ model_set_end:
  strDevUSB:
 	.string "/dev_usb000"
 
+
  syscall8_table:
 	QUAD_ABS(sys8_disable);
 	QUAD_ABS(sys8_enable);
@@ -1030,4 +1037,3 @@ model_set_end:
 
 	// fill out to 3840 bytes
 .org 0xf00
-
