@@ -1,6 +1,4 @@
-#include "macros.h.S"
 
-.align 4
 model_set:
 	lis	%r31, 1
 	ori	%r31, %r31, 0x9004
@@ -48,5 +46,6 @@ model_set:
 	blr
 l_model_skip_check:
 	mr	%r30, %r3
-	b	ABSOLUTE_MEM2(patch_func20 + 4)
+	b	ABS(0x273F98 + 4)
 model_set_end:
+
