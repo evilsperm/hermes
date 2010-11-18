@@ -62,9 +62,9 @@
 ## *** Select your board *** ##
 
 ## Teensy 1.0
-MCU = atmega16u4
-BOARD = USBKEY
-F_CPU = 8000000
+MCU = at90usb1286
+BOARD = TEENSY
+F_CPU = 16000000
 
 ## Teensy++ 1.0
 #MCU = at90usb646
@@ -129,6 +129,11 @@ F_CPU = 8000000
 ## OpenKubus
 #MCU = atmega16u4
 #BOARD = USBKEY
+#F_CPU = 8000000
+
+# JMDBU2
+#MCU = atmega32u4
+#BOARD = JMDBU2
 #F_CPU = 8000000
 
 # Input clock frequency.
