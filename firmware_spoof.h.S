@@ -1,6 +1,5 @@
 
-
- syscall_versiontest_desc:
+syscall_versiontest_desc:
 	QUAD_ABS(syscall_versiontest)
 	.quad USER_DATA
 	

@@ -41,7 +41,7 @@ all_targets="teensy1 teensypp1 teensy2 teensypp2 \
               at90usbkey minimus1 minimus32 maximus \
               blackcat xplain olimex usbtinymkii \
               bentio openkubus atvrusbrf01 udip8 udip16 \
-	      avrkey ps2chiper"
+	      avrkey ps2chiper jmdbu2"
 			  
 			  
 avr_gcc_ver=`avr-gcc --version | head -n 1 | awk '{print $3}'`
@@ -153,6 +153,10 @@ board[$ps2chiper]=PS2CHIPER
 mhz_clock[$ps2chiper]=8
 name[$ps2chiper]="PS2CHIPER"
 
+mcu[$jmdbu2]=atmega32u4
+board[$jmdbu2]=JMDBU2
+mhz_clock[$jmdbu2]=8
+name[$jmdbu2]="JMDBU2"
 
 while [ "x$1" != "x" ]; do
   targets="$targets ${1}"
